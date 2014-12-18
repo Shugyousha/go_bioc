@@ -1,4 +1,4 @@
- package BioC
+package BioC
 
 // for now, writing InfonStruct, eventually, write Infons
 
@@ -9,33 +9,39 @@ import (
 	"io/ioutil"
 	"os"
 	"reflect"
-//	"syscall"
+	//	"syscall"
 )
 
-func ReadCollection ( file string ) Collection {
+func ReadCollection(file string) Collection {
 
-	var col Collection;
+	var col Collection
 
 	data, err := ioutil.ReadFile(file)
 	//	xmlFile, err := os.Open( inFile )
-	if err != nil { panic(err) }
+	if err != nil {
+		panic(err)
+	}
 
 	err = xml.Unmarshal(data, &col)
-	if err != nil { panic(err) }
+	if err != nil {
+		panic(err)
+	}
 
 	col.Map()
 	return col
 }
 
-func WriteCollection ( col Collection, filename string ) error {
+func WriteCollection(col Collection, filename string) error {
 	col.Unmap()
 
 	data, err := xml.Marshal(col)
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 
-//	err = ioutil.WriteFile(file,data,0777)
+	//	err = ioutil.WriteFile(file,data,0777)
 
-	perm := os.FileMode(0664);
+	perm := os.FileMode(0664)
 	f, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, perm)
 	if err != nil {
 		return err
@@ -43,11 +49,15 @@ func WriteCollection ( col Collection, filename string ) error {
 
 	// write headers
 
-	_, err = f.Write( []byte(xml.Header) )
-	if err != nil { return err }
-	_, err = f.Write( []byte( "<!DOCTYPE collection SYSTEM 'BioC.dtd'>" ) )
-	if err != nil { return err }
-	
+	_, err = f.Write([]byte(xml.Header))
+	if err != nil {
+		return err
+	}
+	_, err = f.Write([]byte("<!DOCTYPE collection SYSTEM 'BioC.dtd'>"))
+	if err != nil {
+		return err
+	}
+
 	n, err := f.Write(data)
 	f.Close()
 	if err == nil && n < len(data) {
@@ -58,54 +68,58 @@ func WriteCollection ( col Collection, filename string ) error {
 }
 
 type ReadDocument struct {
-	inDocument bool
+	inDocument   bool
 	inCollection bool
-	token xml.Token
-	decoder *xml.Decoder
-	err string
+	token        xml.Token
+	decoder      *xml.Decoder
+	err          string
 }
 
-func (rd * ReadDocument) Start( file string ) ( Collection, string ) {
+func (rd *ReadDocument) Start(file string) (Collection, string) {
 
-	var col Collection;
+	var col Collection
 
-	xmlFile, err := os.Open( file )
-	if err != nil { panic(err) }
-	
+	xmlFile, err := os.Open(file)
+	if err != nil {
+		panic(err)
+	}
+
 	rd.decoder = xml.NewDecoder(xmlFile)
 
 	rd.inCollection = false
 	rd.inDocument = false
 
-	for ! rd.inDocument {
+	for !rd.inDocument {
 
 		rd.token, err = rd.decoder.Token()
 		if rd.token == nil {
 			return col, "no collection"
 		}
-		if err != nil { panic(err) }
-		
+		if err != nil {
+			panic(err)
+		}
+
 		switch se := rd.token.(type) {
 		case xml.StartElement:
-//			fmt.Println( se.Name.Local )
+			//			fmt.Println( se.Name.Local )
 
 			switch se.Name.Local {
 			case "collection":
 				rd.inCollection = true
-//				fmt.Println( "found collection" )
+				//				fmt.Println( "found collection" )
 			case "source":
 				if rd.inCollection {
 					rd.token, err = rd.decoder.Token()
-					col.Source = string( rd.token.(xml.CharData) )
+					col.Source = string(rd.token.(xml.CharData))
 					err = rd.decoder.Skip()
-//				fmt.Println( "found source" )
+					//				fmt.Println( "found source" )
 				}
 			case "date":
 				if rd.inCollection {
 					rd.token, err = rd.decoder.Token()
-					col.Date = string( rd.token.(xml.CharData) )
+					col.Date = string(rd.token.(xml.CharData))
 					err = rd.decoder.Skip()
-//				fmt.Println( "found date" )
+					//				fmt.Println( "found date" )
 
 				}
 			case "key":
@@ -113,7 +127,7 @@ func (rd * ReadDocument) Start( file string ) ( Collection, string ) {
 					rd.token, err = rd.decoder.Token()
 					col.Key = string(rd.token.(xml.CharData))
 					err = rd.decoder.Skip()
-//				fmt.Println( "found key" )
+					//				fmt.Println( "found key" )
 				}
 			case "infon":
 				if rd.inCollection {
@@ -132,11 +146,11 @@ func (rd * ReadDocument) Start( file string ) ( Collection, string ) {
 					err = rd.decoder.Skip()
 					col.InfonStructs = append(col.InfonStructs, InfonStruct{key, value})
 				}
-					
+
 			case "document":
 				if rd.inCollection {
 					rd.inDocument = true
-//					fmt.Println( "found document" )
+					//					fmt.Println( "found document" )
 					col.Map()
 					return col, ""
 				}
@@ -147,61 +161,62 @@ func (rd * ReadDocument) Start( file string ) ( Collection, string ) {
 	return col, "end of Start"
 }
 
+func (rd *ReadDocument) Next() (Document, string) {
 
-func (rd * ReadDocument) Next() ( Document, string ) {
-			
-	var doc Document;
+	var doc Document
 
-	if ! rd.inCollection {
+	if !rd.inCollection {
 		return doc, "not in collection"
 	}
 
-	if ! rd.inDocument {
+	if !rd.inDocument {
 		return doc, "not in document"
 	}
 
 	//doc_loop:	for {
-	
+
 	switch se := rd.token.(type) {
 	case xml.StartElement:
 		if se.Name.Local == "document" {
-			
-			se, _ := rd.token.(xml.StartElement)
-			rd.decoder.DecodeElement( &doc, &se )
 
-//			doc.Write()
+			se, _ := rd.token.(xml.StartElement)
+			rd.decoder.DecodeElement(&doc, &se)
+
+			//			doc.Write()
 
 			token, err := rd.decoder.Token()
-			if err != nil { panic(err) }
+			if err != nil {
+				panic(err)
+			}
 			rd.token = token
 			if false {
 				fmt.Println(rd.token)
-				fmt.Println( reflect.TypeOf(rd.token) )
+				fmt.Println(reflect.TypeOf(rd.token))
 			}
 
 			doc.Map()
 			return doc, ""
-			
+
 		}
 	case xml.EndElement:
 		if se.Name.Local == "collection" {
 			rd.inDocument = false
-			return doc, "eof" 
+			return doc, "eof"
 		}
 	}
 	return doc, "end of next"
 }
 
 type WriteDocument struct {
-	XMLFile *os.File 
+	XMLFile *os.File
 }
 
 //  based on MarshalIndent
 // needs more digging getting type info from BioC struct
-	// 	/*
-	// 	 func writeElement(v interface{} ) ([]byte, error) {
-	// 	 var b bytes.Buffer
-	// 	 enc := NewEncoder(&b)
+// 	/*
+// 	 func writeElement(v interface{} ) ([]byte, error) {
+// 	 var b bytes.Buffer
+// 	 enc := NewEncoder(&b)
 // 	 err := enc.marshalValue(reflect.ValueOf(v), nil)
 // 	 enc.Flush()
 // 	 if err != nil {
@@ -211,97 +226,104 @@ type WriteDocument struct {
 // 	 }
 // 	 */
 
-func ( wr * WriteDocument) writeString ( s string ) {
-	wr.XMLFile.Write( []byte(s) )
+func (wr *WriteDocument) writeString(s string) {
+	wr.XMLFile.Write([]byte(s))
 }
-	
-func ( wr * WriteDocument) writeElement( val, name string ) {
 
-	wr.writeString( "<" )
-	wr.writeString( name )
-	wr.writeString( ">" )
+func (wr *WriteDocument) writeElement(val, name string) {
 
-	wr.writeString( val ) 
+	wr.writeString("<")
+	wr.writeString(name)
+	wr.writeString(">")
 
-	wr.writeString( "<" )
-	wr.writeString( "/" )
-	wr.writeString( name )
-	wr.writeString( ">" )
+	wr.writeString(val)
+
+	wr.writeString("<")
+	wr.writeString("/")
+	wr.writeString(name)
+	wr.writeString(">")
 
 }
-	
-func ( wr * WriteDocument) writeElementAttr( val, name string, attrs []xml.Attr ) {
 
-	wr.writeString( "<" )
-	wr.writeString( name )
+func (wr *WriteDocument) writeElementAttr(val, name string, attrs []xml.Attr) {
+
+	wr.writeString("<")
+	wr.writeString(name)
 
 	for i := range attrs {
-		wr.writeString( " " )
-		wr.writeString( attrs[i].Name.Local )
-		wr.writeString( "=\"" )
-		xml.EscapeText( wr.XMLFile, []byte(attrs[i].Value) )
-		wr.writeString( "\"" )
+		wr.writeString(" ")
+		wr.writeString(attrs[i].Name.Local)
+		wr.writeString("=\"")
+		xml.EscapeText(wr.XMLFile, []byte(attrs[i].Value))
+		wr.writeString("\"")
 	}
-			
-	wr.writeString( ">" )
 
-	wr.writeString( val ) 
+	wr.writeString(">")
 
-	wr.writeString( "<" )
-	wr.writeString( "/" )
-	wr.writeString( name )
-	wr.writeString( ">" )
+	wr.writeString(val)
+
+	wr.writeString("<")
+	wr.writeString("/")
+	wr.writeString(name)
+	wr.writeString(">")
 
 }
 
+func (wr *WriteDocument) Start(file string, col Collection) error {
 
-func ( wr * WriteDocument) Start( file string, col Collection) ( error ) {
-
-	var err error;
-	wr.XMLFile, err = os.Create( file )
-	if err != nil { panic(err) }
+	var err error
+	wr.XMLFile, err = os.Create(file)
+	if err != nil {
+		panic(err)
+	}
 
 	// next 4 lines in WriteCollection also
 
-	_, err = wr.XMLFile.Write( []byte(xml.Header) )
-	if err != nil { return err }
-	_, err = wr.XMLFile.Write( []byte( "<!DOCTYPE collection SYSTEM 'BioC.dtd'>" ) )
-	if err != nil { return err }
-	
-//	startElement(wr.XMLFile, col, "collection" )
-//	wr.XMLFile.Write( []byte( "<collection>" ) )
-	wr.writeString( "<collection>" )
+	_, err = wr.XMLFile.Write([]byte(xml.Header))
+	if err != nil {
+		return err
+	}
+	_, err = wr.XMLFile.Write([]byte("<!DOCTYPE collection SYSTEM 'BioC.dtd'>"))
+	if err != nil {
+		return err
+	}
 
-/*
-	data, err := xml.Marshal( col.Source )
-	wr.XMLFile.Write( data )
-	data, err = xml.Marshal( col.Date )
-	wr.XMLFile.Write( data )
-	data, err = xml.Marshal( col.Key )
-	wr.XMLFile.Write( data )
-*/
+	//	startElement(wr.XMLFile, col, "collection" )
+	//	wr.XMLFile.Write( []byte( "<collection>" ) )
+	wr.writeString("<collection>")
 
-	wr.writeElement( col.Source, "source" )
-	wr.writeElement( col.Date, "date" )
-	wr.writeElement( col.Key, "key" )
+	/*
+		data, err := xml.Marshal( col.Source )
+		wr.XMLFile.Write( data )
+		data, err = xml.Marshal( col.Date )
+		wr.XMLFile.Write( data )
+		data, err = xml.Marshal( col.Key )
+		wr.XMLFile.Write( data )
+	*/
 
-//	col.Unmap() -- not needed because using Infons directly here
+	wr.writeElement(col.Source, "source")
+	wr.writeElement(col.Date, "date")
+	wr.writeElement(col.Key, "key")
+
+	//	col.Unmap() -- not needed because using Infons directly here
 	for key, value := range col.Infons {
-		attrs := []xml.Attr{ xml.Attr{xml.Name{"","key"}, key}}
-		wr.writeElementAttr( value, "infon", attrs )
+		attrs := []xml.Attr{xml.Attr{xml.Name{"", "key"}, key}}
+		wr.writeElementAttr(value, "infon", attrs)
 	}
 
 	return err
 }
 
-func (wr * WriteDocument) Next( doc Document ) {
+func (wr *WriteDocument) Next(doc Document) {
 	doc.Unmap()
-	data, err :=  xml.Marshal( doc )
-	if ( err != nil ) { panic( err ) }
-	wr.XMLFile.Write( data )
+	data, err := xml.Marshal(doc)
+	if err != nil {
+		panic(err)
+	}
+	wr.XMLFile.Write(data)
 }
 
-func (wr * WriteDocument) Close() {
-	wr.XMLFile.Write( []byte( "</collection>" ) )
+func (wr *WriteDocument) Close() {
+	wr.XMLFile.Write([]byte("</collection>"))
 	wr.XMLFile.Close()
 }
