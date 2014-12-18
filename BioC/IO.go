@@ -61,67 +61,67 @@ func WriteCollection(col Collection, filename string) error {
 	return err
 }
 
-type ReadDocument struct {
+type DocumentReader struct {
 	inDocument   bool
 	inCollection bool
 	token        xml.Token
 	decoder      *xml.Decoder
 }
 
-func (rd *ReadDocument) Start(reader io.Reader) (Collection, error) {
+func (dr *DocumentReader) Start(reader io.Reader) (Collection, error) {
 	var col Collection
 	var err error
 
-	rd.decoder = xml.NewDecoder(reader)
+	dr.decoder = xml.NewDecoder(reader)
 
-	rd.inCollection = false
-	rd.inDocument = false
+	dr.inCollection = false
+	dr.inDocument = false
 
-	for !rd.inDocument {
-		rd.token, err = rd.decoder.Token()
-		if rd.token == nil {
+	for !dr.inDocument {
+		dr.token, err = dr.decoder.Token()
+		if dr.token == nil {
 			return col, fmt.Errorf("no collection")
 		}
 		if err != nil {
 			panic(err)
 		}
 
-		switch se := rd.token.(type) {
+		switch se := dr.token.(type) {
 		case xml.StartElement:
 
 			switch se.Name.Local {
 			case "collection":
-				rd.inCollection = true
+				dr.inCollection = true
 			case "source":
-				if rd.inCollection {
-					rd.token, err = rd.decoder.Token()
+				if dr.inCollection {
+					dr.token, err = dr.decoder.Token()
 					if err != nil {
-							return col, fmt.Errorf("Error when decoding token: %s", err)
+						return col, fmt.Errorf("Error when decoding token: %s", err)
 					}
-					col.Source = string(rd.token.(xml.CharData))
-					err = rd.decoder.Skip()
+					col.Source = string(dr.token.(xml.CharData))
+					err = dr.decoder.Skip()
 				}
 			case "date":
-				if rd.inCollection {
-					rd.token, err = rd.decoder.Token()
+				if dr.inCollection {
+					dr.token, err = dr.decoder.Token()
 					if err != nil {
-							return col, fmt.Errorf("Error when decoding token: %s", err)
+						return col, fmt.Errorf("Error when decoding token: %s", err)
 					}
-					col.Date = string(rd.token.(xml.CharData))
-					err = rd.decoder.Skip()
+					col.Date = string(dr.token.(xml.CharData))
+					err = dr.decoder.Skip()
 
 				}
 			case "key":
-				if rd.inCollection {
-					rd.token, err = rd.decoder.Token()
+				if dr.inCollection {
+					dr.token, err = dr.decoder.Token()
 					if err != nil {
-							return col, fmt.Errorf("Error when decoding token: %s", err)
+						return col, fmt.Errorf("Error when decoding token: %s", err)
 					}
-					col.Key = string(rd.token.(xml.CharData))
-					err = rd.decoder.Skip()
+					col.Key = string(dr.token.(xml.CharData))
+					err = dr.decoder.Skip()
 				}
 			case "infon":
-				if rd.inCollection {
+				if dr.inCollection {
 					key := ""
 					for i := range se.Attr {
 						if se.Attr[i].Name.Local == "key" {
@@ -132,18 +132,18 @@ func (rd *ReadDocument) Start(reader io.Reader) (Collection, error) {
 					if key == "" {
 						return col, fmt.Errorf("infon without key")
 					}
-					rd.token, err = rd.decoder.Token()
+					dr.token, err = dr.decoder.Token()
 					if err != nil {
-							return col, fmt.Errorf("Error when decoding token: %s", err)
+						return col, fmt.Errorf("Error when decoding token: %s", err)
 					}
-					value := string(rd.token.(xml.CharData))
-					err = rd.decoder.Skip()
+					value := string(dr.token.(xml.CharData))
+					err = dr.decoder.Skip()
 					col.InfonStructs = append(col.InfonStructs, InfonStruct{key, value})
 				}
 
 			case "document":
-				if rd.inCollection {
-					rd.inDocument = true
+				if dr.inCollection {
+					dr.inDocument = true
 					col.Map()
 					return col, nil
 				}
@@ -154,29 +154,29 @@ func (rd *ReadDocument) Start(reader io.Reader) (Collection, error) {
 	return col, nil
 }
 
-func (rd *ReadDocument) Next() (Document, error) {
+func (dr *DocumentReader) Next() (Document, error) {
 	var doc Document
 
-	if !rd.inCollection {
+	if !dr.inCollection {
 		return doc, fmt.Errorf("not in collection")
 	}
 
-	if !rd.inDocument {
+	if !dr.inDocument {
 		return doc, fmt.Errorf("not in document")
 	}
 
-	switch se := rd.token.(type) {
+	switch se := dr.token.(type) {
 	case xml.StartElement:
 		if se.Name.Local == "document" {
 
-			se, _ := rd.token.(xml.StartElement)
-			rd.decoder.DecodeElement(&doc, &se)
+			se, _ := dr.token.(xml.StartElement)
+			dr.decoder.DecodeElement(&doc, &se)
 
-			token, err := rd.decoder.Token()
+			token, err := dr.decoder.Token()
 			if err != nil {
 				panic(err)
 			}
-			rd.token = token
+			dr.token = token
 
 			doc.Map()
 			return doc, nil
@@ -184,7 +184,7 @@ func (rd *ReadDocument) Next() (Document, error) {
 
 	case xml.EndElement:
 		if se.Name.Local == "collection" {
-			rd.inDocument = false
+			dr.inDocument = false
 			return doc, fmt.Errorf("eof")
 		}
 	}
