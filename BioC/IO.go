@@ -95,12 +95,18 @@ func (rd *ReadDocument) Start(reader io.Reader) (Collection, error) {
 			case "source":
 				if rd.inCollection {
 					rd.token, err = rd.decoder.Token()
+					if err != nil {
+							return col, fmt.Errorf("Error when decoding token: %s", err)
+					}
 					col.Source = string(rd.token.(xml.CharData))
 					err = rd.decoder.Skip()
 				}
 			case "date":
 				if rd.inCollection {
 					rd.token, err = rd.decoder.Token()
+					if err != nil {
+							return col, fmt.Errorf("Error when decoding token: %s", err)
+					}
 					col.Date = string(rd.token.(xml.CharData))
 					err = rd.decoder.Skip()
 
@@ -108,6 +114,9 @@ func (rd *ReadDocument) Start(reader io.Reader) (Collection, error) {
 			case "key":
 				if rd.inCollection {
 					rd.token, err = rd.decoder.Token()
+					if err != nil {
+							return col, fmt.Errorf("Error when decoding token: %s", err)
+					}
 					col.Key = string(rd.token.(xml.CharData))
 					err = rd.decoder.Skip()
 				}
@@ -124,6 +133,9 @@ func (rd *ReadDocument) Start(reader io.Reader) (Collection, error) {
 						return col, fmt.Errorf("infon without key")
 					}
 					rd.token, err = rd.decoder.Token()
+					if err != nil {
+							return col, fmt.Errorf("Error when decoding token: %s", err)
+					}
 					value := string(rd.token.(xml.CharData))
 					err = rd.decoder.Skip()
 					col.InfonStructs = append(col.InfonStructs, InfonStruct{key, value})
