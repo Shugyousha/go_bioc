@@ -6,8 +6,8 @@ import (
 	"bufio"
 	"encoding/xml"
 	"fmt"
+	"io"
 	"os"
-	"reflect"
 )
 
 func ReadCollection(filename string) Collection {
@@ -66,28 +66,21 @@ type ReadDocument struct {
 	inCollection bool
 	token        xml.Token
 	decoder      *xml.Decoder
-	err          string
 }
 
-func (rd *ReadDocument) Start(file string) (Collection, string) {
-
+func (rd *ReadDocument) Start(reader io.Reader) (Collection, error) {
 	var col Collection
+	var err error
 
-	xmlFile, err := os.Open(file)
-	if err != nil {
-		panic(err)
-	}
-
-	rd.decoder = xml.NewDecoder(xmlFile)
+	rd.decoder = xml.NewDecoder(reader)
 
 	rd.inCollection = false
 	rd.inDocument = false
 
 	for !rd.inDocument {
-
 		rd.token, err = rd.decoder.Token()
 		if rd.token == nil {
-			return col, "no collection"
+			return col, fmt.Errorf("no collection")
 		}
 		if err != nil {
 			panic(err)
@@ -95,25 +88,21 @@ func (rd *ReadDocument) Start(file string) (Collection, string) {
 
 		switch se := rd.token.(type) {
 		case xml.StartElement:
-			//			fmt.Println( se.Name.Local )
 
 			switch se.Name.Local {
 			case "collection":
 				rd.inCollection = true
-				//				fmt.Println( "found collection" )
 			case "source":
 				if rd.inCollection {
 					rd.token, err = rd.decoder.Token()
 					col.Source = string(rd.token.(xml.CharData))
 					err = rd.decoder.Skip()
-					//				fmt.Println( "found source" )
 				}
 			case "date":
 				if rd.inCollection {
 					rd.token, err = rd.decoder.Token()
 					col.Date = string(rd.token.(xml.CharData))
 					err = rd.decoder.Skip()
-					//				fmt.Println( "found date" )
 
 				}
 			case "key":
@@ -121,7 +110,6 @@ func (rd *ReadDocument) Start(file string) (Collection, string) {
 					rd.token, err = rd.decoder.Token()
 					col.Key = string(rd.token.(xml.CharData))
 					err = rd.decoder.Skip()
-					//				fmt.Println( "found key" )
 				}
 			case "infon":
 				if rd.inCollection {
@@ -133,7 +121,7 @@ func (rd *ReadDocument) Start(file string) (Collection, string) {
 						}
 					}
 					if key == "" {
-						return col, "infon without key"
+						return col, fmt.Errorf("infon without key")
 					}
 					rd.token, err = rd.decoder.Token()
 					value := string(rd.token.(xml.CharData))
@@ -144,30 +132,26 @@ func (rd *ReadDocument) Start(file string) (Collection, string) {
 			case "document":
 				if rd.inCollection {
 					rd.inDocument = true
-					//					fmt.Println( "found document" )
 					col.Map()
-					return col, ""
+					return col, nil
 				}
 			}
 		}
 	}
 	col.Map()
-	return col, "end of Start"
+	return col, nil
 }
 
-func (rd *ReadDocument) Next() (Document, string) {
-
+func (rd *ReadDocument) Next() (Document, error) {
 	var doc Document
 
 	if !rd.inCollection {
-		return doc, "not in collection"
+		return doc, fmt.Errorf("not in collection")
 	}
 
 	if !rd.inDocument {
-		return doc, "not in document"
+		return doc, fmt.Errorf("not in document")
 	}
-
-	//doc_loop:	for {
 
 	switch se := rd.token.(type) {
 	case xml.StartElement:
@@ -176,29 +160,23 @@ func (rd *ReadDocument) Next() (Document, string) {
 			se, _ := rd.token.(xml.StartElement)
 			rd.decoder.DecodeElement(&doc, &se)
 
-			//			doc.Write()
-
 			token, err := rd.decoder.Token()
 			if err != nil {
 				panic(err)
 			}
 			rd.token = token
-			if false {
-				fmt.Println(rd.token)
-				fmt.Println(reflect.TypeOf(rd.token))
-			}
 
 			doc.Map()
-			return doc, ""
-
+			return doc, nil
 		}
+
 	case xml.EndElement:
 		if se.Name.Local == "collection" {
 			rd.inDocument = false
-			return doc, "eof"
+			return doc, fmt.Errorf("eof")
 		}
 	}
-	return doc, "end of next"
+	return doc, nil
 }
 
 type WriteDocument struct {
