@@ -81,7 +81,7 @@ func (dr *DocumentReader) Start(reader io.Reader) (Collection, error) {
 			return col, fmt.Errorf("no collection")
 		}
 		if err != nil {
-			panic(err)
+			return col, fmt.Errorf("Error when decoding token: %s", err)
 		}
 
 		switch se := dr.token.(type) {
@@ -94,7 +94,7 @@ func (dr *DocumentReader) Start(reader io.Reader) (Collection, error) {
 				if dr.inCollection {
 					dr.token, err = dr.decoder.Token()
 					if err != nil {
-						return col, fmt.Errorf("Error when decoding token: %s", err)
+						return col, fmt.Errorf("Error when decoding source token: %s", err)
 					}
 					col.Source = string(dr.token.(xml.CharData))
 					err = dr.decoder.Skip()
@@ -103,7 +103,7 @@ func (dr *DocumentReader) Start(reader io.Reader) (Collection, error) {
 				if dr.inCollection {
 					dr.token, err = dr.decoder.Token()
 					if err != nil {
-						return col, fmt.Errorf("Error when decoding token: %s", err)
+						return col, fmt.Errorf("Error when decoding date token: %s", err)
 					}
 					col.Date = string(dr.token.(xml.CharData))
 					err = dr.decoder.Skip()
@@ -113,7 +113,7 @@ func (dr *DocumentReader) Start(reader io.Reader) (Collection, error) {
 				if dr.inCollection {
 					dr.token, err = dr.decoder.Token()
 					if err != nil {
-						return col, fmt.Errorf("Error when decoding token: %s", err)
+						return col, fmt.Errorf("Error when decoding key token: %s", err)
 					}
 					col.Key = string(dr.token.(xml.CharData))
 					err = dr.decoder.Skip()
@@ -132,7 +132,7 @@ func (dr *DocumentReader) Start(reader io.Reader) (Collection, error) {
 					}
 					dr.token, err = dr.decoder.Token()
 					if err != nil {
-						return col, fmt.Errorf("Error when decoding token: %s", err)
+						return col, fmt.Errorf("Error when decoding key token: %s", err)
 					}
 					value := string(dr.token.(xml.CharData))
 					err = dr.decoder.Skip()
