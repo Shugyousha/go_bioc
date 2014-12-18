@@ -3,28 +3,27 @@ package BioC
 // for now, writing InfonStruct, eventually, write Infons
 
 import (
+	"bufio"
 	"encoding/xml"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"os"
 	"reflect"
-	//	"syscall"
 )
 
-func ReadCollection(file string) Collection {
-
+func ReadCollection(filename string) Collection {
 	var col Collection
 
-	data, err := ioutil.ReadFile(file)
-	//	xmlFile, err := os.Open( inFile )
+	file, err := os.Open(filename)
 	if err != nil {
-		panic(err)
+		fmt.Fprintf(os.Stderr, "Error when opening file.\n")
 	}
 
-	err = xml.Unmarshal(data, &col)
+	breader := bufio.NewReader(file)
+	decoder := xml.NewDecoder(breader)
+
+	err = decoder.Decode(&col)
 	if err != nil {
-		panic(err)
+		fmt.Fprintf(os.Stderr, "Error when decoding file.\n")
 	}
 
 	col.Map()
@@ -34,37 +33,32 @@ func ReadCollection(file string) Collection {
 func WriteCollection(col Collection, filename string) error {
 	col.Unmap()
 
-	data, err := xml.Marshal(col)
-	if err != nil {
-		return err
-	}
-
-	//	err = ioutil.WriteFile(file,data,0777)
-
 	perm := os.FileMode(0664)
 	f, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, perm)
 	if err != nil {
 		return err
 	}
 
-	// write headers
+	bwriter := bufio.NewWriter(f)
+	encoder := xml.NewEncoder(bwriter)
+	encoder.Indent(" ", "")
 
-	_, err = f.Write([]byte(xml.Header))
-	if err != nil {
-		return err
-	}
-	_, err = f.Write([]byte("<!DOCTYPE collection SYSTEM 'BioC.dtd'>"))
+	err = encoder.Encode(col)
 	if err != nil {
 		return err
 	}
 
-	n, err := f.Write(data)
-	f.Close()
-	if err == nil && n < len(data) {
-		err = io.ErrShortWrite
+	err = bwriter.Flush()
+	if err != nil {
+		return err
 	}
+
+	err = f.Close()
+	if err != nil {
+		return err
+	}
+
 	return err
-
 }
 
 type ReadDocument struct {
