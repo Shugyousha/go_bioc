@@ -1,7 +1,5 @@
 package BioC
 
-// for now, writing InfonStruct, eventually, write Infons
-
 import (
 	"bufio"
 	"encoding/xml"
@@ -254,7 +252,6 @@ func (wr *WriteDocument) writeElementAttr(val, name string, attrs []xml.Attr) {
 }
 
 func (wr *WriteDocument) Start(file string, col Collection) error {
-
 	var err error
 	wr.XMLFile, err = os.Create(file)
 	if err != nil {

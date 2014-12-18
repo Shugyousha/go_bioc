@@ -1,7 +1,5 @@
 package BioC
 
-// for now, writing InfonStruct, eventually, write Infons
-
 import (
 	"encoding/xml"
 	"fmt"
