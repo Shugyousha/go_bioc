@@ -26,20 +26,6 @@ func (infonStruct InfonStruct) Write() {
 		" value: ", infonStruct.Value)
 }
 
-func writeInfonStructs(infonStructs []InfonStruct) {
-	for _, infonStruct := range infonStructs {
-		infonStruct.Write()
-	}
-}
-
-func write(infons map[string]string) {
-	for key, value := range infons {
-		//		fmt.Println( "infon key: ", key, " value: ", value )
-		fmt.Print(key, ": ", value)
-		fmt.Println()
-	}
-}
-
 type Relation struct {
 	Id           string            `xml:"id,attr"`
 	Infons       map[string]string `xml:"-"`
@@ -49,10 +35,6 @@ type Relation struct {
 
 func (relate Relation) Write() {
 	fmt.Println("id:", relate.Id)
-	write(relate.Infons)
-	//	for _, infonStruct := range relate.InfonStructs {
-	//		infonStruct.Write();
-	//	}
 	for _, node := range relate.Nodes {
 		node.Write()
 	}
@@ -93,10 +75,6 @@ type Annotation struct {
 
 func (note Annotation) Write() {
 	fmt.Println("id:", note.Id)
-	write(note.Infons)
-	// 	for _, infonStruct := range note.InfonStructs {
-	// 		infonStruct.Write();
-	// 	}
 	for _, location := range note.Locations {
 		location.Write()
 	}
@@ -130,10 +108,6 @@ type Sentence struct {
 }
 
 func (sent Sentence) Write() {
-	write(sent.Infons)
-	// 	for _, infonStruct := range sent.InfonStructs {
-	// 		infonStruct.Write();
-	// 	}
 	fmt.Println("offset:", sent.Offset)
 	if len(sent.Text) > 0 {
 		fmt.Println("text:", sent.Text)
@@ -184,12 +158,6 @@ type Passage struct {
 }
 
 func (psg Passage) Write() {
-	//	fmt.Println("size of psg.infons: ", len(psg.Infons))
-	write(psg.Infons)
-	// 	for _, infonStruct := range psg.InfonStructs {
-	// 		infonStruct.Write();
-	// 	}
-	//	writeInfonStructs(psg.InfonStructs)
 	fmt.Println("offset:", psg.Offset)
 	if len(psg.Text) > 0 {
 		fmt.Println("text:", psg.Text)
@@ -251,11 +219,6 @@ type Document struct {
 
 func (doc Document) Write() {
 	fmt.Println("id:", doc.Id)
-	//	fmt.Println("size of doc.Infons: ", len(doc.Infons))
-	write(doc.Infons)
-	// 	for _, infonStruct := range doc.InfonStructs {
-	// 		infonStruct.Write();
-	// 	}
 	for _, psg := range doc.Passages {
 		psg.Write()
 	}
@@ -265,26 +228,15 @@ func (doc Document) Write() {
 }
 
 func (doc *Document) Map() {
-	//	fmt.Println("in doc.Map()")
 	doc.Infons = make(map[string]string, len(doc.InfonStructs))
 	for _, infon := range doc.InfonStructs {
 		doc.Infons[infon.Key] = infon.Value
 	}
-	//	fmt.Println("Map: size of doc.Infons: ", len(doc.Infons))
-
-	// fmt.Println("before Map: size of doc.psg.Infons: ")
-	// for _, psg := range doc.Passages {
-	// 	fmt.Println( len(psg.Infons) )
-	// }
 
 	for i := range doc.Passages {
 		doc.Passages[i].Map()
 	}
 
-	// fmt.Println("after Map: size of doc.psg.Infons: ")
-	// for _, psg := range doc.Passages {
-	// 	fmt.Println( len(psg.Infons) )
-	// }
 
 	for i := range doc.Relations {
 		doc.Relations[i].Map()
@@ -315,31 +267,17 @@ type Collection struct {
 	Documents    []Document        `xml:"document"`
 }
 
-/*
-func ( infons map[string] string ) Write() {
-	for key, value := range infons {
-		fmt.Println("infon ", key, ": ", value );
-	}
-}
-*/
-
 func (col Collection) Write() {
 	fmt.Println("source:", col.Source)
 	fmt.Println("date:", col.Date)
 	fmt.Println("key:", col.Key)
-	//	writeInfonStructs(col.InfonStructs)
-	//	fmt.Println("size of col.Infons: ", len(col.Infons))
-	write(col.Infons)
-	// 	for _, infonStruct := range col.InfonStructs {
-	// 		infonStruct.Write();
-	// 	}
+
 	for _, doc := range col.Documents {
 		doc.Write()
 	}
 }
 
 func (col *Collection) Map() {
-	//	fmt.Println("in col.Map()")
 	col.Infons = make(map[string]string, len(col.InfonStructs))
 	for _, infon := range col.InfonStructs {
 		col.Infons[infon.Key] = infon.Value

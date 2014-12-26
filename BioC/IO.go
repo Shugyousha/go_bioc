@@ -193,21 +193,6 @@ type WriteDocument struct {
 	XMLFile *os.File
 }
 
-//  based on MarshalIndent
-// needs more digging getting type info from BioC struct
-// 	/*
-// 	 func writeElement(v interface{} ) ([]byte, error) {
-// 	 var b bytes.Buffer
-// 	 enc := NewEncoder(&b)
-// 	 err := enc.marshalValue(reflect.ValueOf(v), nil)
-// 	 enc.Flush()
-// 	 if err != nil {
-// 	 return nil, err
-// 	 }
-// 	 return b.Bytes(), nil
-// 	 }
-// 	 */
-
 func (wr *WriteDocument) writeString(s string) {
 	wr.XMLFile.Write([]byte(s))
 }
@@ -269,18 +254,7 @@ func (wr *WriteDocument) Start(file string, col Collection) error {
 		return err
 	}
 
-	//	startElement(wr.XMLFile, col, "collection" )
-	//	wr.XMLFile.Write( []byte( "<collection>" ) )
 	wr.writeString("<collection>")
-
-	/*
-		data, err := xml.Marshal( col.Source )
-		wr.XMLFile.Write( data )
-		data, err = xml.Marshal( col.Date )
-		wr.XMLFile.Write( data )
-		data, err = xml.Marshal( col.Key )
-		wr.XMLFile.Write( data )
-	*/
 
 	wr.writeElement(col.Source, "source")
 	wr.writeElement(col.Date, "date")
