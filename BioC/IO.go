@@ -87,54 +87,61 @@ func (dr *DocumentReader) Start(reader io.Reader) (Collection, error) {
 			switch se.Name.Local {
 			case "collection":
 				dr.inCollection = true
-			case "source":
-				if dr.inCollection {
-					dr.token, err = dr.decoder.Token()
-					if err != nil {
-						return col, fmt.Errorf("Error when decoding source token: %s", err)
-					}
-					col.Source = string(dr.token.(xml.CharData))
-					err = dr.decoder.Skip()
-				}
-			case "date":
-				if dr.inCollection {
-					dr.token, err = dr.decoder.Token()
-					if err != nil {
-						return col, fmt.Errorf("Error when decoding date token: %s", err)
-					}
-					col.Date = string(dr.token.(xml.CharData))
-					err = dr.decoder.Skip()
 
+			case "source":
+				if !dr.inCollection {
+					break
 				}
+				dr.token, err = dr.decoder.Token()
+				if err != nil {
+					return col, fmt.Errorf("Error when decoding source token: %s", err)
+				}
+				col.Source = string(dr.token.(xml.CharData))
+				err = dr.decoder.Skip()
+
+			case "date":
+				if !dr.inCollection {
+					break
+				}
+				dr.token, err = dr.decoder.Token()
+				if err != nil {
+					return col, fmt.Errorf("Error when decoding date token: %s", err)
+				}
+				col.Date = string(dr.token.(xml.CharData))
+				err = dr.decoder.Skip()
+
 			case "key":
-				if dr.inCollection {
-					dr.token, err = dr.decoder.Token()
-					if err != nil {
-						return col, fmt.Errorf("Error when decoding key token: %s", err)
-					}
-					col.Key = string(dr.token.(xml.CharData))
-					err = dr.decoder.Skip()
+				if !dr.inCollection {
+					break
 				}
+				dr.token, err = dr.decoder.Token()
+				if err != nil {
+					return col, fmt.Errorf("Error when decoding key token: %s", err)
+				}
+				col.Key = string(dr.token.(xml.CharData))
+				err = dr.decoder.Skip()
+
 			case "infon":
-				if dr.inCollection {
-					key := ""
-					for i := range se.Attr {
-						if se.Attr[i].Name.Local == "key" {
-							key = se.Attr[i].Value
-							break
-						}
-					}
-					if key == "" {
-						return col, fmt.Errorf("infon without key")
-					}
-					dr.token, err = dr.decoder.Token()
-					if err != nil {
-						return col, fmt.Errorf("Error when decoding key token: %s", err)
-					}
-					value := string(dr.token.(xml.CharData))
-					err = dr.decoder.Skip()
-					col.Infons[key] = value
+				if !dr.inCollection {
+					break
 				}
+				key := ""
+				for i := range se.Attr {
+					if se.Attr[i].Name.Local == "key" {
+						key = se.Attr[i].Value
+						break
+					}
+				}
+				if key == "" {
+					return col, fmt.Errorf("infon without key")
+				}
+				dr.token, err = dr.decoder.Token()
+				if err != nil {
+					return col, fmt.Errorf("Error when decoding key token: %s", err)
+				}
+				value := string(dr.token.(xml.CharData))
+				err = dr.decoder.Skip()
+				col.Infons[key] = value
 
 			case "document":
 				if dr.inCollection {
