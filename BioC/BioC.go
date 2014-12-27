@@ -27,31 +27,40 @@ func (infonStruct InfonStruct) Write() {
 }
 
 type Relation struct {
-	Id           string            `xml:"id,attr"`
-	Infons       map[string]string `xml:"-"`
-	InfonStructs []InfonStruct     `xml:"infon"`
-	Nodes        []Node            `xml:"node"`
+	Id     string            `xml:"id,attr"`
+	Infons map[string]string `xml:"-"`
+	Nodes  []Node            `xml:"node"`
+}
+
+type relationTmp struct {
+	Id           string        `xml:"id,attr"`
+	InfonStructs []InfonStruct `xml:"infon"`
+	Nodes        []Node        `xml:"node"`
+}
+
+func (r *Relation) UnmarshalXML(d *xml.Decoder, start xml.StartElement) (err error) {
+	var reltemp relationTmp
+
+	err = d.DecodeElement(reltemp, &start)
+	if err != nil {
+		return
+	}
+
+	r.Id = reltemp.Id
+	r.Nodes = reltemp.Nodes
+	r.Infons = make(map[string]string, len(reltemp.InfonStructs))
+
+	for _, s := range reltemp.InfonStructs {
+		r.Infons[s.Key] = s.Value
+	}
+
+	return
 }
 
 func (relate Relation) Write() {
 	fmt.Println("id:", relate.Id)
 	for _, node := range relate.Nodes {
 		node.Write()
-	}
-}
-
-func (relate *Relation) Map() {
-	relate.Infons = make(map[string]string, len(relate.InfonStructs))
-	for _, infon := range relate.InfonStructs {
-		relate.Infons[infon.Key] = infon.Value
-	}
-}
-
-func (relate *Relation) Unmap() {
-	relate.InfonStructs = nil
-	for key, value := range relate.Infons {
-		relate.InfonStructs =
-			append(relate.InfonStructs, InfonStruct{key, value})
 	}
 }
 
@@ -66,11 +75,36 @@ func (location Location) Write() {
 }
 
 type Annotation struct {
-	Id           string            `xml:"id,attr"`
-	Infons       map[string]string `xml:"-"`
-	InfonStructs []InfonStruct     `xml:"infon"`
-	Locations    []Location        `xml:"location"`
-	Text         string            `xml:"text,omitempty"`
+	Id        string            `xml:"id,attr"`
+	Infons    map[string]string `xml:"-"`
+	Locations []Location        `xml:"location"`
+	Text      string            `xml:"text,omitempty"`
+}
+
+type annotationTmp struct {
+	Id           string        `xml:"id,attr"`
+	InfonStructs []InfonStruct `xml:"infon"`
+	Locations    []Location    `xml:"location"`
+	Text         string        `xml:"text,omitempty"`
+}
+
+func (a *Annotation) UnmarshalXML(d *xml.Decoder, start xml.StartElement) (err error) {
+	var annotmp annotationTmp
+
+	err = d.DecodeElement(annotmp, &start)
+	if err != nil {
+		return
+	}
+
+	a.Id = annotmp.Id
+	a.Locations = annotmp.Locations
+	a.Infons = make(map[string]string, len(annotmp.InfonStructs))
+
+	for _, s := range annotmp.InfonStructs {
+		a.Infons[s.Key] = s.Value
+	}
+
+	return
 }
 
 func (note Annotation) Write() {
@@ -83,28 +117,41 @@ func (note Annotation) Write() {
 	}
 }
 
-func (note *Annotation) Map() {
-	note.Infons = make(map[string]string, len(note.InfonStructs))
-	for _, infon := range note.InfonStructs {
-		note.Infons[infon.Key] = infon.Value
-	}
-}
-
-func (note *Annotation) Unmap() {
-	note.InfonStructs = nil
-	for key, value := range note.Infons {
-		note.InfonStructs =
-			append(note.InfonStructs, InfonStruct{key, value})
-	}
-}
-
 type Sentence struct {
-	Infons       map[string]string `xml:"-"`
-	InfonStructs []InfonStruct     `xml:"infon"`
-	Offset       int               `xml:"offset"`
-	Text         string            `xml:"text,omitempty"`
-	Annotations  []Annotation      `xml:"annotation"`
-	Relations    []Relation        `xml:"relation"`
+	Infons      map[string]string `xml:"-"`
+	Offset      int               `xml:"offset"`
+	Text        string            `xml:"text,omitempty"`
+	Annotations []Annotation      `xml:"annotation"`
+	Relations   []Relation        `xml:"relation"`
+}
+
+type sentenceTmp struct {
+	InfonStructs []InfonStruct `xml:"infon"`
+	Offset       int           `xml:"offset"`
+	Text         string        `xml:"text,omitempty"`
+	Annotations  []Annotation  `xml:"annotation"`
+	Relations    []Relation    `xml:"relation"`
+}
+
+func (s *Sentence) UnmarshalXML(d *xml.Decoder, start xml.StartElement) (err error) {
+	var senttmp sentenceTmp
+
+	err = d.DecodeElement(senttmp, &start)
+	if err != nil {
+		return
+	}
+
+	s.Offset = senttmp.Offset
+	s.Text = senttmp.Text
+	s.Annotations = senttmp.Annotations
+	s.Relations = senttmp.Relations
+	s.Infons = make(map[string]string, len(senttmp.InfonStructs))
+
+	for _, str := range senttmp.InfonStructs {
+		s.Infons[str.Key] = str.Value
+	}
+
+	return
 }
 
 func (sent Sentence) Write() {
@@ -120,41 +167,44 @@ func (sent Sentence) Write() {
 	}
 }
 
-func (sent *Sentence) Map() {
-	sent.Infons = make(map[string]string, len(sent.InfonStructs))
-	for _, infon := range sent.InfonStructs {
-		sent.Infons[infon.Key] = infon.Value
-	}
-	for i := range sent.Annotations {
-		sent.Annotations[i].Map()
-	}
-	for i := range sent.Relations {
-		sent.Relations[i].Map()
-	}
-}
-
-func (sent *Sentence) Unmap() {
-	sent.InfonStructs = nil
-	for key, value := range sent.Infons {
-		sent.InfonStructs =
-			append(sent.InfonStructs, InfonStruct{key, value})
-	}
-	for i := range sent.Annotations {
-		sent.Annotations[i].Unmap()
-	}
-	for i := range sent.Relations {
-		sent.Relations[i].Unmap()
-	}
-}
-
 type Passage struct {
-	Infons       map[string]string `xml:"-"`
-	InfonStructs []InfonStruct     `xml:"infon"`
-	Offset       int               `xml:"offset"`
-	Text         string            `xml:"text,omitempty"`
-	Sentences    []Sentence        `xml:"sentence"`
-	Annotations  []Annotation      `xml:"annotation"`
-	Relations    []Relation        `xml:"relation"`
+	Infons      map[string]string `xml:"-"`
+	Offset      int               `xml:"offset"`
+	Text        string            `xml:"text,omitempty"`
+	Sentences   []Sentence        `xml:"sentence"`
+	Annotations []Annotation      `xml:"annotation"`
+	Relations   []Relation        `xml:"relation"`
+}
+
+type passageTmp struct {
+	InfonStructs []InfonStruct `xml:"infon"`
+	Offset       int           `xml:"offset"`
+	Text         string        `xml:"text,omitempty"`
+	Sentences    []Sentence    `xml:"sentence"`
+	Annotations  []Annotation  `xml:"annotation"`
+	Relations    []Relation    `xml:"relation"`
+}
+
+func (p *Passage) UnmarshalXML(d *xml.Decoder, start xml.StartElement) (err error) {
+	var psgtmp passageTmp
+
+	err = d.DecodeElement(psgtmp, &start)
+	if err != nil {
+		return
+	}
+
+	p.Offset = psgtmp.Offset
+	p.Text = psgtmp.Text
+	p.Annotations = psgtmp.Annotations
+	p.Relations = psgtmp.Relations
+	p.Sentences = psgtmp.Sentences
+	p.Infons = make(map[string]string, len(psgtmp.InfonStructs))
+
+	for _, str := range psgtmp.InfonStructs {
+		p.Infons[str.Key] = str.Value
+	}
+
+	return
 }
 
 func (psg Passage) Write() {
@@ -173,48 +223,40 @@ func (psg Passage) Write() {
 	}
 }
 
-func (psg *Passage) Map() {
-	//	fmt.Println("in psg.Map()")
-	psg.Infons = make(map[string]string, len(psg.InfonStructs))
-	for _, infon := range psg.InfonStructs {
-		psg.Infons[infon.Key] = infon.Value
-	}
-	//	fmt.Println("Map: size of psg.Infons: ", len(psg.Infons))
-	for i := range psg.Sentences {
-		psg.Sentences[i].Map()
-	}
-	for i := range psg.Annotations {
-		psg.Annotations[i].Map()
-	}
-	for i := range psg.Relations {
-		psg.Relations[i].Map()
-	}
-}
-
-func (psg *Passage) Unmap() {
-	psg.InfonStructs = nil
-	for key, value := range psg.Infons {
-		psg.InfonStructs =
-			append(psg.InfonStructs, InfonStruct{key, value})
-	}
-	for i := range psg.Sentences {
-		psg.Sentences[i].Unmap()
-	}
-	for i := range psg.Annotations {
-		psg.Annotations[i].Unmap()
-	}
-	for i := range psg.Relations {
-		psg.Relations[i].Unmap()
-	}
-}
-
 type Document struct {
-	XMLName      xml.Name          `xml:"document"`
-	Id           string            `xml:"id"`
-	Infons       map[string]string `xml:"-"`
-	InfonStructs []InfonStruct     `xml:"infon"`
-	Passages     []Passage         `xml:"passage"`
-	Relations    []Relation        `xml:"relation"`
+	XMLName   xml.Name          `xml:"document"`
+	Id        string            `xml:"id"`
+	Infons    map[string]string `xml:"-"`
+	Passages  []Passage         `xml:"passage"`
+	Relations []Relation        `xml:"relation"`
+}
+
+type documentTmp struct {
+	XMLName      xml.Name      `xml:"document"`
+	Id           string        `xml:"id"`
+	InfonStructs []InfonStruct `xml:"infon"`
+	Passages     []Passage     `xml:"passage"`
+	Relations    []Relation    `xml:"relation"`
+}
+
+func (doc *Document) UnmarshalXML(d *xml.Decoder, start xml.StartElement) (err error) {
+	var doctmp documentTmp
+
+	err = d.DecodeElement(doctmp, &start)
+	if err != nil {
+		return
+	}
+
+	doc.Id = doctmp.Id
+	doc.Passages = doctmp.Passages
+	doc.Relations = doctmp.Relations
+	doc.Infons = make(map[string]string, len(doctmp.InfonStructs))
+
+	for _, str := range doctmp.InfonStructs {
+		doc.Infons[str.Key] = str.Value
+	}
+
+	return
 }
 
 func (doc Document) Write() {
@@ -227,44 +269,43 @@ func (doc Document) Write() {
 	}
 }
 
-func (doc *Document) Map() {
-	doc.Infons = make(map[string]string, len(doc.InfonStructs))
-	for _, infon := range doc.InfonStructs {
-		doc.Infons[infon.Key] = infon.Value
-	}
-
-	for i := range doc.Passages {
-		doc.Passages[i].Map()
-	}
-
-
-	for i := range doc.Relations {
-		doc.Relations[i].Map()
-	}
-}
-
-func (doc *Document) Unmap() {
-	doc.InfonStructs = nil
-	for key, value := range doc.Infons {
-		doc.InfonStructs =
-			append(doc.InfonStructs, InfonStruct{key, value})
-	}
-	for i := range doc.Passages {
-		doc.Passages[i].Unmap()
-	}
-	for i := range doc.Relations {
-		doc.Relations[i].Unmap()
-	}
-}
-
 type Collection struct {
-	XMLName      xml.Name          `xml:"collection"`
-	Source       string            `xml:"source"`
-	Date         string            `xml:"date"`
-	Key          string            `xml:"key"`
-	Infons       map[string]string `xml:"-"`
-	InfonStructs []InfonStruct     `xml:"infon"`
-	Documents    []Document        `xml:"document"`
+	XMLName   xml.Name          `xml:"collection"`
+	Source    string            `xml:"source"`
+	Date      string            `xml:"date"`
+	Key       string            `xml:"key"`
+	Infons    map[string]string `xml:"-"`
+	Documents []Document        `xml:"document"`
+}
+
+type collectionTmp struct {
+	XMLName      xml.Name      `xml:"collection"`
+	Source       string        `xml:"source"`
+	Date         string        `xml:"date"`
+	Key          string        `xml:"key"`
+	InfonStructs []InfonStruct `xml:"infon"`
+	Documents    []Document    `xml:"document"`
+}
+
+func (col *Collection) UnmarshalXML(d *xml.Decoder, start xml.StartElement) (err error) {
+	var coltmp collectionTmp
+
+	err = d.DecodeElement(coltmp, &start)
+	if err != nil {
+		return
+	}
+
+	col.Source = coltmp.Source
+	col.Date = coltmp.Date
+	col.Key = coltmp.Key
+	col.Documents = coltmp.Documents
+	col.Infons = make(map[string]string, len(coltmp.InfonStructs))
+
+	for _, str := range coltmp.InfonStructs {
+		col.Infons[str.Key] = str.Value
+	}
+
+	return
 }
 
 func (col Collection) Write() {
@@ -274,26 +315,5 @@ func (col Collection) Write() {
 
 	for _, doc := range col.Documents {
 		doc.Write()
-	}
-}
-
-func (col *Collection) Map() {
-	col.Infons = make(map[string]string, len(col.InfonStructs))
-	for _, infon := range col.InfonStructs {
-		col.Infons[infon.Key] = infon.Value
-	}
-	for i := range col.Documents {
-		col.Documents[i].Map()
-	}
-}
-
-func (col *Collection) Unmap() {
-	col.InfonStructs = nil
-	for key, value := range col.Infons {
-		col.InfonStructs =
-			append(col.InfonStructs, InfonStruct{key, value})
-	}
-	for i := range col.Documents {
-		col.Documents[i].Unmap()
 	}
 }

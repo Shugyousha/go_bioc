@@ -24,13 +24,10 @@ func ReadCollection(filename string) Collection {
 		fmt.Fprintf(os.Stderr, "Error when decoding file.\n")
 	}
 
-	col.Map()
 	return col
 }
 
 func WriteCollection(col Collection, filename string) error {
-	col.Unmap()
-
 	perm := os.FileMode(0664)
 	f, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, perm)
 	if err != nil {
@@ -136,19 +133,17 @@ func (dr *DocumentReader) Start(reader io.Reader) (Collection, error) {
 					}
 					value := string(dr.token.(xml.CharData))
 					err = dr.decoder.Skip()
-					col.InfonStructs = append(col.InfonStructs, InfonStruct{key, value})
+					col.Infons[key] = value
 				}
 
 			case "document":
 				if dr.inCollection {
 					dr.inDocument = true
-					col.Map()
 					return col, nil
 				}
 			}
 		}
 	}
-	col.Map()
 	return col, nil
 }
 
@@ -176,7 +171,6 @@ func (dr *DocumentReader) Next() (Document, error) {
 			}
 			dr.token = token
 
-			doc.Map()
 			return doc, nil
 		}
 
@@ -270,7 +264,6 @@ func (wr *WriteDocument) Start(file string, col Collection) error {
 }
 
 func (wr *WriteDocument) Next(doc Document) {
-	doc.Unmap()
 	data, err := xml.Marshal(doc)
 	if err != nil {
 		panic(err)
