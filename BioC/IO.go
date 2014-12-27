@@ -183,15 +183,15 @@ func (dr *DocumentReader) Next() (Document, error) {
 	return doc, nil
 }
 
-type WriteDocument struct {
-	XMLFile *os.File
+type DocumentWriter struct {
+	XMLFile io.Writer
 }
 
-func (wr *WriteDocument) writeString(s string) {
+func (wr *DocumentWriter) writeString(s string) {
 	wr.XMLFile.Write([]byte(s))
 }
 
-func (wr *WriteDocument) writeElement(val, name string) {
+func (wr *DocumentWriter) writeElement(val, name string) {
 
 	wr.writeString("<")
 	wr.writeString(name)
@@ -206,7 +206,7 @@ func (wr *WriteDocument) writeElement(val, name string) {
 
 }
 
-func (wr *WriteDocument) writeElementAttr(val, name string, attrs []xml.Attr) {
+func (wr *DocumentWriter) writeElementAttr(val, name string, attrs []xml.Attr) {
 
 	wr.writeString("<")
 	wr.writeString(name)
@@ -230,12 +230,9 @@ func (wr *WriteDocument) writeElementAttr(val, name string, attrs []xml.Attr) {
 
 }
 
-func (wr *WriteDocument) Start(file string, col Collection) error {
+func (wr *DocumentWriter) Start(writer io.Writer, col Collection) error {
 	var err error
-	wr.XMLFile, err = os.Create(file)
-	if err != nil {
-		panic(err)
-	}
+	wr.XMLFile = writer
 
 	// next 4 lines in WriteCollection also
 
@@ -263,7 +260,7 @@ func (wr *WriteDocument) Start(file string, col Collection) error {
 	return err
 }
 
-func (wr *WriteDocument) Next(doc Document) {
+func (wr *DocumentWriter) Next(doc Document) {
 	data, err := xml.Marshal(doc)
 	if err != nil {
 		panic(err)
@@ -271,7 +268,6 @@ func (wr *WriteDocument) Next(doc Document) {
 	wr.XMLFile.Write(data)
 }
 
-func (wr *WriteDocument) Close() {
+func (wr *DocumentWriter) Close() {
 	wr.XMLFile.Write([]byte("</collection>"))
-	wr.XMLFile.Close()
 }
