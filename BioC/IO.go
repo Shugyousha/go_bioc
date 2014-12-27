@@ -13,7 +13,7 @@ func ReadCollection(filename string) Collection {
 
 	file, err := os.Open(filename)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error when opening file.\n")
+		fmt.Fprintf(os.Stderr, "Error when opening file: %q\n", err)
 	}
 
 	breader := bufio.NewReader(file)
@@ -21,7 +21,7 @@ func ReadCollection(filename string) Collection {
 
 	err = decoder.Decode(&col)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error when decoding file.\n")
+		fmt.Fprintf(os.Stderr, "Error when decoding file: %q\n", err)
 	}
 
 	return col

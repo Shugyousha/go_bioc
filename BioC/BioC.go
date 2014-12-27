@@ -36,7 +36,7 @@ type Relation struct {
 func (r *Relation) UnmarshalXML(d *xml.Decoder, start xml.StartElement) (err error) {
 	var reltmp Relation
 
-	err = d.DecodeElement(reltmp, &start)
+	err = d.DecodeElement(&reltmp, &start)
 	if err != nil {
 		return
 	}
@@ -79,7 +79,7 @@ type Annotation struct {
 func (a *Annotation) UnmarshalXML(d *xml.Decoder, start xml.StartElement) (err error) {
 	var annotmp Annotation
 
-	err = d.DecodeElement(annotmp, &start)
+	err = d.DecodeElement(&annotmp, &start)
 	if err != nil {
 		return
 	}
@@ -116,7 +116,7 @@ type Sentence struct {
 func (s *Sentence) UnmarshalXML(d *xml.Decoder, start xml.StartElement) (err error) {
 	var senttmp Sentence
 
-	err = d.DecodeElement(senttmp, &start)
+	err = d.DecodeElement(&senttmp, &start)
 	if err != nil {
 		return
 	}
@@ -157,7 +157,7 @@ type Passage struct {
 func (p *Passage) UnmarshalXML(d *xml.Decoder, start xml.StartElement) (err error) {
 	var psgtmp Passage
 
-	err = d.DecodeElement(psgtmp, &start)
+	err = d.DecodeElement(&psgtmp, &start)
 	if err != nil {
 		return
 	}
@@ -200,7 +200,7 @@ type Document struct {
 func (doc *Document) UnmarshalXML(d *xml.Decoder, start xml.StartElement) (err error) {
 	var doctmp Document
 
-	err = d.DecodeElement(doctmp, &start)
+	err = d.DecodeElement(&doctmp, &start)
 	if err != nil {
 		return
 	}
@@ -238,7 +238,7 @@ type Collection struct {
 func (col *Collection) UnmarshalXML(d *xml.Decoder, start xml.StartElement) (err error) {
 	var coltmp Collection
 
-	err = d.DecodeElement(coltmp, &start)
+	err = d.DecodeElement(&coltmp, &start)
 	if err != nil {
 		return
 	}
