@@ -184,90 +184,39 @@ func (dr *DocumentReader) Next() (Document, error) {
 }
 
 type DocumentWriter struct {
-	XMLFile io.Writer
+	Writer io.Writer
 }
 
-func (wr *DocumentWriter) writeString(s string) {
-	wr.XMLFile.Write([]byte(s))
-}
-
-func (wr *DocumentWriter) writeElement(val, name string) {
-
-	wr.writeString("<")
-	wr.writeString(name)
-	wr.writeString(">")
-
-	wr.writeString(val)
-
-	wr.writeString("<")
-	wr.writeString("/")
-	wr.writeString(name)
-	wr.writeString(">")
-
-}
-
-func (wr *DocumentWriter) writeElementAttr(val, name string, attrs []xml.Attr) {
-
-	wr.writeString("<")
-	wr.writeString(name)
-
-	for i := range attrs {
-		wr.writeString(" ")
-		wr.writeString(attrs[i].Name.Local)
-		wr.writeString("=\"")
-		xml.EscapeText(wr.XMLFile, []byte(attrs[i].Value))
-		wr.writeString("\"")
-	}
-
-	wr.writeString(">")
-
-	wr.writeString(val)
-
-	wr.writeString("<")
-	wr.writeString("/")
-	wr.writeString(name)
-	wr.writeString(">")
-
-}
-
-func (wr *DocumentWriter) Start(writer io.Writer, col Collection) error {
+func (dw *DocumentWriter) Start(writer io.Writer, col Collection) error {
 	var err error
-	wr.XMLFile = writer
+	dw.Writer = writer
 
-	// next 4 lines in WriteCollection also
-
-	_, err = wr.XMLFile.Write([]byte(xml.Header))
+	_, err = dw.Writer.Write([]byte(xml.Header))
 	if err != nil {
 		return err
 	}
-	_, err = wr.XMLFile.Write([]byte("<!DOCTYPE collection SYSTEM 'BioC.dtd'>"))
+	_, err = dw.Writer.Write([]byte("<!DOCTYPE collection SYSTEM 'BioC.dtd'>"))
 	if err != nil {
 		return err
 	}
 
-	wr.writeString("<collection>")
+	dw.Writer.Write([]byte(fmt.Sprintf("<collection><source>%s</source><date>%s</date><key>%s</key>", col.Source, col.Date, col.Key)))
 
-	wr.writeElement(col.Source, "source")
-	wr.writeElement(col.Date, "date")
-	wr.writeElement(col.Key, "key")
-
-	//	col.Unmap() -- not needed because using Infons directly here
 	for key, value := range col.Infons {
-		attrs := []xml.Attr{xml.Attr{xml.Name{"", "key"}, key}}
-		wr.writeElementAttr(value, "infon", attrs)
+		dw.Writer.Write([]byte(fmt.Sprintf("<infon key=\"%s\">%s</infon>", key, value)))
 	}
 
 	return err
 }
 
-func (wr *DocumentWriter) Next(doc Document) {
+func (dw *DocumentWriter) Next(doc Document) {
 	data, err := xml.Marshal(doc)
 	if err != nil {
 		panic(err)
 	}
-	wr.XMLFile.Write(data)
+	dw.Writer.Write(data)
 }
 
-func (wr *DocumentWriter) Close() {
-	wr.XMLFile.Write([]byte("</collection>"))
+func (dw *DocumentWriter) Close() {
+	dw.Writer.Write([]byte("</collection>"))
 }
