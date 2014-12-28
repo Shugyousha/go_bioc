@@ -208,7 +208,7 @@ func (dr *DocumentReader) Next() (*Document, error) {
 			dr.token = token
 		}
 	}
-	return nil, fmt.Errorf("End of function case")
+	return nil, fmt.Errorf("This is most likely not a BioC XML file")
 }
 
 type DocumentWriter struct {
