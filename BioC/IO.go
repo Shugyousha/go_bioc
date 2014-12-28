@@ -35,6 +35,15 @@ func WriteCollection(col Collection, filename string) error {
 	}
 
 	bwriter := bufio.NewWriter(f)
+	_, err = bwriter.Write([]byte(xml.Header))
+	if err != nil {
+		return err
+	}
+	_, err = bwriter.Write([]byte("<!DOCTYPE collection SYSTEM \"BioC.dtd\">\n"))
+	if err != nil {
+		return err
+	}
+
 	encoder := xml.NewEncoder(bwriter)
 	encoder.Indent(" ", "")
 
@@ -202,7 +211,7 @@ func (dw *DocumentWriter) Start(writer io.Writer, col Collection) error {
 	if err != nil {
 		return err
 	}
-	_, err = dw.Writer.Write([]byte("<!DOCTYPE collection SYSTEM 'BioC.dtd'>"))
+	_, err = dw.Writer.Write([]byte("<!DOCTYPE collection SYSTEM \"BioC.dtd\">"))
 	if err != nil {
 		return err
 	}
