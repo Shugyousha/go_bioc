@@ -237,12 +237,13 @@ func (dw *DocumentWriter) Start(writer io.Writer, col Collection) error {
 	return err
 }
 
-func (dw *DocumentWriter) Next(doc Document) {
+func (dw *DocumentWriter) Next(doc Document) error {
 	data, err := xml.Marshal(doc)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	dw.Writer.Write(data)
+	return nil
 }
 
 func (dw *DocumentWriter) Close() {
