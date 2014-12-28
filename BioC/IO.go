@@ -163,40 +163,52 @@ func (dr *DocumentReader) Start(reader io.Reader) (Collection, error) {
 	return col, nil
 }
 
-func (dr *DocumentReader) Next() (Document, error) {
+func (dr *DocumentReader) Next() (*Document, error) {
 	var doc Document
 
 	if !dr.inCollection {
-		return doc, fmt.Errorf("not in collection")
+		return nil, fmt.Errorf("not in collection")
 	}
 
 	if !dr.inDocument {
-		return doc, fmt.Errorf("not in document")
+		return nil, fmt.Errorf("not in document")
 	}
 
-	switch se := dr.token.(type) {
-	case xml.StartElement:
-		if se.Name.Local == "document" {
+	for {
+		switch se := dr.token.(type) {
+		case xml.StartElement:
+			if se.Name.Local == "document" {
 
-			se, _ := dr.token.(xml.StartElement)
-			dr.decoder.DecodeElement(&doc, &se)
+				se, _ := dr.token.(xml.StartElement)
+				err := dr.decoder.DecodeElement(&doc, &se)
+				if err != nil {
+					return nil, fmt.Errorf("Error when decoding element: %s", err)
+				}
 
+				token, err := dr.decoder.Token()
+				if err != nil {
+					return nil, fmt.Errorf("Error when getting next token: %s", err)
+				}
+				dr.token = token
+
+				return &doc, nil
+			}
+
+		case xml.EndElement:
+			if se.Name.Local == "collection" {
+				dr.inDocument = false
+				return &doc, fmt.Errorf("EOF")
+			}
+
+		default:
 			token, err := dr.decoder.Token()
 			if err != nil {
-				panic(err)
+				return nil, fmt.Errorf("Error when getting next token: %s", err)
 			}
 			dr.token = token
-
-			return doc, nil
-		}
-
-	case xml.EndElement:
-		if se.Name.Local == "collection" {
-			dr.inDocument = false
-			return doc, fmt.Errorf("eof")
 		}
 	}
-	return doc, nil
+	return nil, fmt.Errorf("End of function case")
 }
 
 type DocumentWriter struct {
